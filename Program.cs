@@ -14,16 +14,13 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// Ativa o Swagger apenas em desenvolvimento
-if (app.Environment.IsDevelopment())
+// Swagger habilitado para todos os ambientes (incluindo produção)
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Biblioteca Rosa v1");
-        c.RoutePrefix = "swagger"; // Acesse em /swagger
-    });
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Biblioteca Rosa v1");
+    c.RoutePrefix = "swagger"; // Acesse em /swagger
+});
 
 var livros = new List<Livro>
 {

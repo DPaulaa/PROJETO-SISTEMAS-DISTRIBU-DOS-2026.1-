@@ -1,3 +1,6 @@
+# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
+# More GitHub Actions for Azure: https://github.com/Azure/actions
+
 name: Build and deploy ASP.Net Core app to Azure Web App - livrariaRosa
 
 on:
@@ -8,9 +11,9 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     permissions:
-      contents: read
+      contents: read #This is required for actions/checkout
 
     steps:
       - uses: actions/checkout@v4
@@ -20,47 +23,37 @@ jobs:
         with:
           dotnet-version: '10.x'
 
-      - name: Restore dependencies
-        run: dotnet restore
+      - name: Build with dotnet
+        run: dotnet build --configuration Release
 
-      - name: Build
-        run: dotnet build --configuration Release --no-restore
-
-      - name: Test
-        run: dotnet test --no-build --configuration Release --verbosity normal
-        continue-on-error: true
-
-      - name: Publish
-        run: dotnet publish -c Release -o "${{ env.DOTNET_ROOT }}/myapp" --no-build
+      - name: dotnet publish
+        run: dotnet publish -c Release -o "${{env.DOTNET_ROOT}}/myapp"
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: .net-app
-          path: ${{ env.DOTNET_ROOT }}/myapp
+          path: ${{env.DOTNET_ROOT}}/myapp
 
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     needs: build
-    environment:
-      name: Production
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
     permissions:
-      id-token: write
-      contents: read
+      id-token: write #This is required for requesting the JWT
+      contents: read #This is required for actions/checkout
 
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
           name: .net-app
-
+      
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id:       ${{ secrets.AZUREAPPSERVICE_CLIENTID_F693F75763774A158754EA6F346AA495 }}
-          tenant-id:       ${{ secrets.AZUREAPPSERVICE_TENANTID_A2F2AEB72483476CB603986D45567CD2 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_AAC198F8624949369B6DE06100B16ABF }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_8FA488D814DE474989692933C93E1DC4 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_9CF9B584FDCC425CB99871B1E1805C1B }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_673739C106F94613A1A3908B4BD63364 }}
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
@@ -69,3 +62,4 @@ jobs:
           app-name: 'livrariaRosa'
           slot-name: 'Production'
           package: .
+          

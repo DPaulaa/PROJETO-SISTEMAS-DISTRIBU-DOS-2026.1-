@@ -1,44 +1,216 @@
-<h1 align="center" style="color:#c2559c;">Biblioteca Rosa</h1>
-<br/>
-<p align="center">
-<span style="color:#c2559c;font-weight:bold"> Biblioteca Rosa </span> é uma API REST de controle básico de uma biblioteca universitária, afim de automatizar as tarefas básicas do dia a dia de uma biblioteca, como controle de aluguel e devolução de livros, cadastro de usuários, garantindo integridade da biblioteca
-</p>
+# Biblioteca Rosa — API REST
 
-## Regras de negócio
-### Empréstimos
-- Alunos podem ter até 5 livros simultaneamente
-- Professores podem ter até 5 livros simultaneamente
-- O prazo de empréstimo para alunos é de 10 dias corridos
-- O prazo de empréstimo para professores é de 1 mês corrido
-- O empréstimo só pode ser realizado se houver exemplares disponíveis
-- Um usuário não pode emprestar o mesmo livro mais de uma vez ao mesmo tempo
+Projeto Final da disciplina de **Sistemas Distribuídos (2026/1)**  
+Professor: Alexandre Montanha — UniBH
 
-### Renovação
-- O empréstimo pode ser renovado até 3 vezes
-- A renovação só é permitida antes da data de vencimento
-- Não é possível renovar se o livro estiver reservado por outro usuário
+---
 
-### Reservas
-- Usuários não podem reservar livros indisponíveis
-- O sistema deve manter uma fila de espera
-- Quando o livro for devolvido, ele fica disponível para o próximo da fila
+## Sobre o Projeto
 
-### Atrasos
-- 1 semana de atraso, corresponde a 2 semanas sem novos empréstimos
-- 1 dia de atraso, corresponde a mais 1 dia sem novos empréstimos
-- Não serão aceitos pagamentos de multa
+API REST para gerenciamento do acervo de livros da Biblioteca Rosa.  
+Desenvolvida em ASP.NET Core com arquitetura em camadas, persistência em Azure SQL e deploy automatizado no Azure App Service via GitHub Actions.
 
-### Restrições
-- Apenas administradores e bibliotecários podem cadastrar, editar ou remover livros
+---
 
-### Histórico
-- Todos os empréstimos devem ser armazenados
-- O histórico não pode ser apagado
+## Stack Tecnológica
 
-## Alunos envolvidos
-1221141558 - Lucas Figueiredo de Almeida Castilho Soares\
-125111410617 - Livia Steise Gaspar Diniz\
-125111382859 - Augusto Felipe de Paula Coimbra\
-125111385813 - Bernardo de Paula Dias\
-125111401298 - Henrique Márcio Dias Alves\
-125111404838 - Luiz Guilherme Vilaça de Moraes
+| Camada        | Tecnologia                              |
+|---------------|-----------------------------------------|
+| Framework     | ASP.NET Core 10 — Web API (Controllers) |
+| ORM           | Entity Framework Core 9                 |
+| Banco (prod)  | Azure SQL Database (PaaS — DTU Basic)   |
+| Banco (dev)   | SQL Server LocalDB                      |
+| Documentação  | Swagger / OpenAPI (Swashbuckle)         |
+| Deploy        | Azure App Service via GitHub Actions    |
+
+---
+
+## Arquitetura
+
+O projeto adota **Arquitetura em Camadas** com separação clara de responsabilidades:
+
+```
+LivrariaRosa/
+├── Controllers/          # Camada de apresentação — enxuta, sem regras de negócio
+├── Services/             # Camada de aplicação — regras de negócio
+│   └── Interfaces/       # Contratos (DIP — Dependency Inversion)
+├── Repositories/         # Camada de acesso a dados
+│   └── Interfaces/       # Contratos (DIP)
+├── Models/
+│   ├── Entities/         # Entidades do domínio (mapeadas pelo EF Core)
+│   └── DTOs/
+│       ├── Requests/     # O que o cliente envia
+│       └── Responses/    # O que a API retorna (sem expor campos internos)
+├── Data/                 # DbContext + Migrations
+├── Middlewares/          # Tratamento global de exceções
+└── .github/workflows/    # CI/CD — GitHub Actions → Azure
+```
+
+**Princípios aplicados:** SRP, DIP (via interfaces + DI nativa do ASP.NET Core),  
+Repository Pattern, DTO separado de entidade, Soft Delete, paginação, envelope de resposta padronizado.
+
+---
+
+## Endpoints
+
+### Livros
+
+| Método   | Rota                    | Descrição                        |
+|----------|-------------------------|----------------------------------|
+| `GET`    | `/api/v1/livros`        | Lista livros com paginação       |
+| `GET`    | `/api/v1/livros/{id}`   | Busca livro por ID               |
+| `POST`   | `/api/v1/livros`        | Adiciona novo livro              |
+| `PUT`    | `/api/v1/livros/{id}`   | Atualiza livro existente         |
+| `DELETE` | `/api/v1/livros/{id}`   | Remove livro (soft delete)       |
+
+### Paginação
+
+```
+GET /api/v1/livros?pagina=1&tamanhoPagina=10
+```
+
+### Formato de Resposta (envelope padronizado)
+
+```json
+{
+  "sucesso": true,
+  "dados": { ... },
+  "mensagem": null,
+  "erros": null
+}
+```
+
+---
+
+## Como Executar Localmente
+
+### Pré-requisitos
+- [.NET 10 SDK](https://dotnet.microsoft.com/download)
+- SQL Server LocalDB (instalado com o Visual Studio) **ou** SQL Server Express
+
+### 1. Configurar a connection string
+
+Copie o arquivo de exemplo e preencha com suas credenciais locais:
+
+```bash
+cp appsettings.Development.json.example appsettings.Development.json
+```
+
+O arquivo `appsettings.Development.json` **não deve ser commitado** (está no `.gitignore`).  
+Connection string padrão para LocalDB:
+
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=LivrariaRosaDB;Trusted_Connection=True;"
+  }
+}
+```
+
+### 2. Aplicar Migrations
+
+```bash
+dotnet ef database update
+```
+
+### 3. Executar
+
+```bash
+dotnet run
+```
+
+Acesse: **http://localhost:5117/swagger**
+
+---
+
+## Migrations
+
+```bash
+# Criar nova migration
+dotnet ef migrations add NomeDaMigration
+
+# Aplicar ao banco
+dotnet ef database update
+
+# Reverter última migration
+dotnet ef migrations remove
+```
+
+---
+
+## Deploy no Azure
+
+O deploy é automatizado via GitHub Actions (`.github/workflows/main_livrariarosa.yml`).  
+A cada push na branch `main`, o pipeline:
+
+1. Restaura dependências
+2. Compila em modo Release
+3. Executa testes
+4. Publica e faz deploy no Azure App Service `livrariaRosa`
+
+### Secrets necessários no GitHub
+
+| Secret | Descrição |
+|--------|-----------|
+| `AZUREAPPSERVICE_CLIENTID_...` | Client ID da Managed Identity |
+| `AZUREAPPSERVICE_TENANTID_...` | Tenant ID do Azure AD |
+| `AZUREAPPSERVICE_SUBSCRIPTIONID_...` | Subscription ID |
+
+### Connection String em Produção
+
+Configure a connection string diretamente no Azure App Service:  
+**Configuration → Connection strings → `DefaultConnection`**
+
+> ⚠️ **Nunca commite a senha real no repositório.** Use variáveis de ambiente ou Azure Key Vault em produção.
+
+---
+
+## Exemplos de Requisição
+
+### Criar livro
+
+```http
+POST /api/v1/livros
+Content-Type: application/json
+
+{
+  "titulo": "Clean Code",
+  "autor": "Robert C. Martin",
+  "isbn": "978-0132350884"
+}
+```
+
+**Resposta (201 Created):**
+```json
+{
+  "sucesso": true,
+  "dados": {
+    "id": 5,
+    "titulo": "Clean Code",
+    "autor": "Robert C. Martin",
+    "isbn": "978-0132350884",
+    "createdAt": "2026-05-16T00:00:00Z"
+  }
+}
+```
+
+### Erro de validação
+
+```http
+POST /api/v1/livros
+Content-Type: application/json
+
+{ "titulo": "" }
+```
+
+**Resposta (400 Bad Request):**
+```json
+{
+  "sucesso": false,
+  "mensagem": "Dados inválidos.",
+  "erros": [
+    "O campo 'titulo' é obrigatório.",
+    "O campo 'autor' é obrigatório."
+  ]
+}
+```

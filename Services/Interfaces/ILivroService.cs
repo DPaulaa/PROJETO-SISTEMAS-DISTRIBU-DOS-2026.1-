@@ -1,13 +1,16 @@
-using LivrariaRosa.Models.DTOs.Requests;
-using LivrariaRosa.Models.DTOs.Responses;
+// Services/Interfaces/ILivroService.cs
+//
+// Define o "contrato" das operações de livros disponíveis para os controllers.
+// O controller não sabe como as coisas são feitas — só sabe o que pode pedir.
+namespace BibliotecaRosa.Services.Interfaces;
 
-namespace LivrariaRosa.Services.Interfaces;
+using BibliotecaRosa.Models.DTOs;
 
 public interface ILivroService
 {
-    Task<object> ListarTodosAsync(int pagina, int tamanhoPagina);
-    Task<LivroResponse?> BuscarPorIdAsync(int id);
-    Task<LivroResponse> CriarAsync(LivroRequest request);
-    Task<LivroResponse?> AtualizarAsync(int id, LivroRequest request);
-    Task<bool> RemoverAsync(int id);
+    IEnumerable<LivroResponse> GetAll();
+    LivroResponse GetById(int id);
+    LivroResponse Create(LivroRequest request);
+    LivroResponse Update(int id, LivroRequest request);
+    void Delete(int id);
 }

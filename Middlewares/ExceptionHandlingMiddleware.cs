@@ -1,11 +1,13 @@
-// Middlewares/ExceptionHandlingMiddleware.cs
-//
-// Intercepta qualquer erro que aconteça durante uma requisição e devolve uma resposta organizada ao cliente (com status HTTP e mensagem legível).
-// Assim os controllers ficam limpos — sem blocos try/catch espalhados.
-namespace BibliotecaRosa.Middlewares;
+using System.Net;
+using System.Text.Json;
+using LivrariaRosa.Models.DTOs.Responses;
 
-using BibliotecaRosa.Exceptions;
+namespace LivrariaRosa.Middlewares;
 
+/// <summary>
+/// Middleware global de tratamento de exceções.
+/// Impede que stack traces ou detalhes internos cheguem ao cliente.
+/// </summary>
 public class ExceptionHandlingMiddleware
 {
     private readonly RequestDelegate _next;
@@ -23,26 +25,38 @@ public class ExceptionHandlingMiddleware
         {
             await _next(context);
         }
-        catch (RecursoNaoEncontradoException ex)
+        catch (KeyNotFoundException ex)
         {
-            await Responder(context, 404, ex.Message);
+            _logger.LogWarning(ex, "Recurso não encontrado");
+            await EscreverResposta(context, HttpStatusCode.NotFound, ex.Message);
         }
-        catch (RegraDeNegocioException ex)
+        catch (ArgumentException ex)
         {
-            await Responder(context, 400, ex.Message);
+            _logger.LogWarning(ex, "Argumento inválido");
+            await EscreverResposta(context, HttpStatusCode.BadRequest, ex.Message);
         }
         catch (Exception ex)
         {
-            // O detalhe do erro vai para o log interno — o cliente recebe só uma mensagem genérica
-            _logger.LogError(ex, "Erro interno em {Path}", context.Request.Path);
-            await Responder(context, 500, "Ocorreu um erro interno. Tente novamente.");
+            // Loga o erro completo internamente, mas não expõe ao cliente
+            _logger.LogError(ex, "Erro não tratado na requisição {Method} {Path}",
+                context.Request.Method, context.Request.Path);
+
+            await EscreverResposta(context, HttpStatusCode.InternalServerError,
+                "Ocorreu um erro interno. Tente novamente em instantes.");
         }
     }
 
-    private static Task Responder(HttpContext ctx, int status, string mensagem)
+    private static async Task EscreverResposta(HttpContext context, HttpStatusCode statusCode, string mensagem)
     {
-        ctx.Response.StatusCode  = status;
-        ctx.Response.ContentType = "application/json";
-        return ctx.Response.WriteAsJsonAsync(new { status, message = mensagem });
+        context.Response.ContentType = "application/json";
+        context.Response.StatusCode  = (int)statusCode;
+
+        var resposta = ApiResponse<object>.Falha(mensagem);
+        var json     = JsonSerializer.Serialize(resposta, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        });
+
+        await context.Response.WriteAsync(json);
     }
 }

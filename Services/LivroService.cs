@@ -1,47 +1,50 @@
-// Services/LivroService.cs
-//
-// Aqui ficam as regras de negócio dos livros: validar ISBN duplicado, montar o objeto antes de salvar, registrar logs de operação, etc.
-// Não sabe nada de HTTP — só processa dados e chama o repositório.
-// Se amanhã precisarmos de um LivroServiceComCache, basta criar uma nova classe com o mesmo contrato (ILivroService) sem mexer aqui.
-namespace BibliotecaRosa.Services;
+using LivrariaRosa.Models.DTOs.Requests;
+using LivrariaRosa.Models.DTOs.Responses;
+using LivrariaRosa.Models.Entities;
+using LivrariaRosa.Repositories.Interfaces;
+using LivrariaRosa.Services.Interfaces;
 
-using BibliotecaRosa.Exceptions;
-using BibliotecaRosa.Models;
-using BibliotecaRosa.Models.DTOs;
-using BibliotecaRosa.Repositories.Interfaces;
-using BibliotecaRosa.Services.Interfaces;
+namespace LivrariaRosa.Services;
 
 public class LivroService : ILivroService
 {
-    // O repositório é injetado — quem chama o serviço não precisa saber como os dados são guardados
-    private readonly ILivroRepository _repo;
+    private readonly ILivroRepository _repository;
     private readonly ILogger<LivroService> _logger;
 
-    public LivroService(ILivroRepository repo, ILogger<LivroService> logger)
+    public LivroService(ILivroRepository repository, ILogger<LivroService> logger)
     {
-        _repo   = repo;
+        _repository = repository;
         _logger = logger;
     }
 
-    public IEnumerable<LivroResponse> GetAll() =>
-        _repo.GetAll().Select(Mapear);
-
-    public LivroResponse GetById(int id)
+    public async Task<object> ListarTodosAsync(int pagina, int tamanhoPagina)
     {
-        var livro = _repo.GetById(id)
-            ?? throw new RecursoNaoEncontradoException($"Livro {id} não encontrado.");
-        return Mapear(livro);
+        _logger.LogInformation("Listando livros — página {Pagina}, tamanho {Tamanho}", pagina, tamanhoPagina);
+
+        var livros  = await _repository.ListarTodosAsync(pagina, tamanhoPagina);
+        var total   = await _repository.ContarTotalAsync();
+        var totalPaginas = (int)Math.Ceiling((double)total / tamanhoPagina);
+
+        return new
+        {
+            Dados        = livros.Select(MapToResponse),
+            Pagina       = pagina,
+            TamanhoPagina = tamanhoPagina,
+            Total        = total,
+            TotalPaginas = totalPaginas
+        };
     }
 
-    public LivroResponse Create(LivroRequest request)
+    public async Task<LivroResponse?> BuscarPorIdAsync(int id)
     {
-        // Regra de negócio: ISBN único
-        if (!string.IsNullOrWhiteSpace(request.Isbn))
-        {
-            var existente = _repo.GetByIsbn(request.Isbn.Trim());
-            if (existente is not null)
-                throw new RegraDeNegocioException($"Já existe um livro com ISBN {request.Isbn}.");
-        }
+        _logger.LogInformation("Buscando livro com Id={Id}", id);
+        var livro = await _repository.BuscarPorIdAsync(id);
+        return livro is null ? null : MapToResponse(livro);
+    }
+
+    public async Task<LivroResponse> CriarAsync(LivroRequest request)
+    {
+        _logger.LogInformation("Criando livro: {Titulo}", request.Titulo);
 
         var livro = new Livro
         {
@@ -51,42 +54,46 @@ public class LivroService : ILivroService
             CreatedAt = DateTime.UtcNow
         };
 
-        _repo.Add(livro);
-        _logger.LogInformation("Livro criado: '{Titulo}' (Id={Id})", livro.Titulo, livro.Id);
-        return Mapear(livro);
+        await _repository.AdicionarAsync(livro);
+        _logger.LogInformation("Livro criado com Id={Id}", livro.Id);
+        return MapToResponse(livro);
     }
 
-    public LivroResponse Update(int id, LivroRequest request)
+    public async Task<LivroResponse?> AtualizarAsync(int id, LivroRequest request)
     {
-        var livro = _repo.GetById(id)
-            ?? throw new RecursoNaoEncontradoException($"Livro {id} não encontrado.");
+        _logger.LogInformation("Atualizando livro Id={Id}", id);
+
+        var livro = await _repository.BuscarPorIdAsync(id);
+        if (livro is null) return null;
 
         livro.Titulo = request.Titulo.Trim();
         livro.Autor  = request.Autor.Trim();
-        livro.Isbn   = request.Isbn?.Trim() ?? livro.Isbn;
+        if (request.Isbn is not null)
+            livro.Isbn = request.Isbn.Trim();
 
-        _repo.Update(livro);
-        _logger.LogInformation("Livro atualizado: Id={Id}", id);
-        return Mapear(livro);
+        await _repository.AtualizarAsync(livro);
+        return MapToResponse(livro);
     }
 
-    public void Delete(int id)
+    public async Task<bool> RemoverAsync(int id)
     {
-        var livro = _repo.GetById(id)
-            ?? throw new RecursoNaoEncontradoException($"Livro {id} não encontrado.");
+        _logger.LogInformation("Removendo livro Id={Id}", id);
 
-        _repo.Remove(livro);
-        _logger.LogInformation("Livro removido: Id={Id}", id);
+        var livro = await _repository.BuscarPorIdAsync(id);
+        if (livro is null) return false;
+
+        await _repository.RemoverAsync(livro);
+        _logger.LogInformation("Livro Id={Id} removido (soft delete)", id);
+        return true;
     }
 
-    // Converte o objeto interno (Livro) para o formato que será enviado ao cliente (LivroResponse).
-    // Assim o cliente nunca vê campos internos que não são relevantes para ele.
-    private static LivroResponse Mapear(Livro l) => new()
+    // Mapeamento privado: entidade → DTO de resposta (sem expor campos sensíveis)
+    private static LivroResponse MapToResponse(Livro livro) => new()
     {
-        Id        = l.Id,
-        Titulo    = l.Titulo,
-        Autor     = l.Autor,
-        Isbn      = l.Isbn,
-        CreatedAt = l.CreatedAt
+        Id        = livro.Id,
+        Titulo    = livro.Titulo,
+        Autor     = livro.Autor,
+        Isbn      = livro.Isbn,
+        CreatedAt = livro.CreatedAt
     };
 }

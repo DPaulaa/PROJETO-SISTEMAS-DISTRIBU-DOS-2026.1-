@@ -1,85 +1,216 @@
-<h1 align="center" style="color:#c2559c;">Biblioteca Rosa</h1>
+# Biblioteca Rosa — API REST
 
-<p align="center">
-  API REST para controle básico de acervo de uma biblioteca universitária.<br/>
-  Desenvolvida em <strong>ASP.NET Core (.NET 10)</strong> como projeto prático da disciplina de <strong>Sistemas Distribuídos — UniBH 2026/1</strong>.
-</p>
+Projeto Final da disciplina de **Sistemas Distribuídos (2026/1)**  
+Professor: Alexandre Montanha — UniBH
 
 ---
 
-## O que a API faz
+## Sobre o Projeto
 
-A Biblioteca Rosa expõe endpoints HTTP para gerenciar o catálogo de livros de uma biblioteca. Através dela é possível listar, cadastrar, editar e remover livros, além de um endpoint protegido por token para operações autenticadas.
-
-**Funcionalidades implementadas:**
-- CRUD completo de livros (`GET`, `POST`, `PUT`, `DELETE`)
-- Validação de ISBN duplicado ao cadastrar
-- Endpoint protegido com autenticação via header `Authorization: Basic <token>`
-- Tratamento centralizado de erros (middleware global)
-- Endpoint de diagnóstico com informações do servidor
-- Documentação interativa via Swagger (`/swagger`)
+API REST para gerenciamento do acervo de livros da Biblioteca Rosa.  
+Desenvolvida em ASP.NET Core com arquitetura em camadas, persistência em Azure SQL e deploy automatizado no Azure App Service via GitHub Actions.
 
 ---
 
-## Endpoints principais
+## Stack Tecnológica
 
-| Método | Rota | Descrição |
-|--------|------|-----------|
-| GET | `/api/v1/livros` | Lista todos os livros |
-| GET | `/api/v1/livros/{id}` | Busca um livro por ID |
-| POST | `/api/v1/livros` | Cadastra um novo livro |
-| PUT | `/api/v1/livros/{id}` | Atualiza um livro existente |
-| DELETE | `/api/v1/livros/{id}` | Remove um livro |
-| GET | `/api/v1/secure/livros` | Lista livros (requer token) |
-| GET | `/api/v1/debug/info` | Informações do servidor |
-| GET | `/api/v1/debug/crash` | Simula um erro 500 (apenas para testes) |
-
-Para acessar o endpoint seguro, envie o header:
-```
-Authorization: Basic <token configurado no appsettings.json>
-```
+| Camada        | Tecnologia                              |
+|---------------|-----------------------------------------|
+| Framework     | ASP.NET Core 10 — Web API (Controllers) |
+| ORM           | Entity Framework Core 9                 |
+| Banco (prod)  | Azure SQL Database (PaaS — DTU Basic)   |
+| Banco (dev)   | SQL Server LocalDB                      |
+| Documentação  | Swagger / OpenAPI (Swashbuckle)         |
+| Deploy        | Azure App Service via GitHub Actions    |
 
 ---
 
-## Estrutura do projeto
+## Arquitetura
+
+O projeto adota **Arquitetura em Camadas** com separação clara de responsabilidades:
 
 ```
-BibliotecaRosa/
-├── Controllers/        # Recebem as requisições HTTP e devolvem respostas
-├── Services/           # Regras de negócio (validações, lógica)
-│   └── Interfaces/     # Contratos que definem o que cada serviço faz
-├── Repositories/       # Acesso aos dados (atualmente em memória)
-│   └── Interfaces/
-├── Models/             # Representação dos dados
-│   └── DTOs/           # Formatos de entrada (Request) e saída (Response)
-├── Middlewares/        # Tratamento global de erros
-├── Exceptions/         # Exceções personalizadas do domínio
-└── Program.cs          # Configuração e inicialização da aplicação
+LivrariaRosa/
+├── Controllers/          # Camada de apresentação — enxuta, sem regras de negócio
+├── Services/             # Camada de aplicação — regras de negócio
+│   └── Interfaces/       # Contratos (DIP — Dependency Inversion)
+├── Repositories/         # Camada de acesso a dados
+│   └── Interfaces/       # Contratos (DIP)
+├── Models/
+│   ├── Entities/         # Entidades do domínio (mapeadas pelo EF Core)
+│   └── DTOs/
+│       ├── Requests/     # O que o cliente envia
+│       └── Responses/    # O que a API retorna (sem expor campos internos)
+├── Data/                 # DbContext + Migrations
+├── Middlewares/          # Tratamento global de exceções
+└── .github/workflows/    # CI/CD — GitHub Actions → Azure
 ```
 
-> **Nota:** Os dados são armazenados em memória e se perdem ao reiniciar o servidor. Para persistência real, basta implementar um repositório com EF Core e trocar o registro no `Program.cs`.
+**Princípios aplicados:** SRP, DIP (via interfaces + DI nativa do ASP.NET Core),  
+Repository Pattern, DTO separado de entidade, Soft Delete, paginação, envelope de resposta padronizado.
 
 ---
 
-## Princípios aplicados (SOLID)
+## Endpoints
 
-O projeto foi estruturado seguindo os princípios SOLID como exercício prático:
+### Livros
 
-- **S** — Cada classe tem uma única responsabilidade (controller só trata HTTP, service só aplica regras, repository só acessa dados)
-- **O** — Novas funcionalidades podem ser adicionadas sem modificar o que já existe (ex: novo tipo de auth cria uma nova classe, não altera a existente)
-- **L** — Qualquer implementação de repositório ou serviço pode ser substituída sem quebrar o restante
-- **I** — Interfaces separadas por responsabilidade (`ILivroService`, `IAuthService`, `IDiagnosticoService`)
-- **D** — Controllers e serviços dependem de interfaces, não de implementações concretas
+| Método   | Rota                    | Descrição                        |
+|----------|-------------------------|----------------------------------|
+| `GET`    | `/api/v1/livros`        | Lista livros com paginação       |
+| `GET`    | `/api/v1/livros/{id}`   | Busca livro por ID               |
+| `POST`   | `/api/v1/livros`        | Adiciona novo livro              |
+| `PUT`    | `/api/v1/livros/{id}`   | Atualiza livro existente         |
+| `DELETE` | `/api/v1/livros/{id}`   | Remove livro (soft delete)       |
+
+### Paginação
+
+```
+GET /api/v1/livros?pagina=1&tamanhoPagina=10
+```
+
+### Formato de Resposta (envelope padronizado)
+
+```json
+{
+  "sucesso": true,
+  "dados": { ... },
+  "mensagem": null,
+  "erros": null
+}
+```
 
 ---
 
-## Alunos
+## Como Executar Localmente
 
-| Matrícula | Nome |
-|-----------|------|
-| 1221141558 | Lucas Figueiredo de Almeida Castilho Soares |
-| 125111410617 | Livia Steise Gaspar Diniz |
-| 125111382859 | Augusto Felipe de Paula Coimbra |
-| 125111385813 | Bernardo de Paula Dias |
-| 125111401298 | Henrique Márcio Dias Alves |
-| 125111404838 | Luiz Guilherme Vilaça de Moraes |
+### Pré-requisitos
+- [.NET 10 SDK](https://dotnet.microsoft.com/download)
+- SQL Server LocalDB (instalado com o Visual Studio) **ou** SQL Server Express
+
+### 1. Configurar a connection string
+
+Copie o arquivo de exemplo e preencha com suas credenciais locais:
+
+```bash
+cp appsettings.Development.json.example appsettings.Development.json
+```
+
+O arquivo `appsettings.Development.json` **não deve ser commitado** (está no `.gitignore`).  
+Connection string padrão para LocalDB:
+
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=LivrariaRosaDB;Trusted_Connection=True;"
+  }
+}
+```
+
+### 2. Aplicar Migrations
+
+```bash
+dotnet ef database update
+```
+
+### 3. Executar
+
+```bash
+dotnet run
+```
+
+Acesse: **http://localhost:5117/swagger**
+
+---
+
+## Migrations
+
+```bash
+# Criar nova migration
+dotnet ef migrations add NomeDaMigration
+
+# Aplicar ao banco
+dotnet ef database update
+
+# Reverter última migration
+dotnet ef migrations remove
+```
+
+---
+
+## Deploy no Azure
+
+O deploy é automatizado via GitHub Actions (`.github/workflows/main_livrariarosa.yml`).  
+A cada push na branch `main`, o pipeline:
+
+1. Restaura dependências
+2. Compila em modo Release
+3. Executa testes
+4. Publica e faz deploy no Azure App Service `livrariaRosa`
+
+### Secrets necessários no GitHub
+
+| Secret | Descrição |
+|--------|-----------|
+| `AZUREAPPSERVICE_CLIENTID_...` | Client ID da Managed Identity |
+| `AZUREAPPSERVICE_TENANTID_...` | Tenant ID do Azure AD |
+| `AZUREAPPSERVICE_SUBSCRIPTIONID_...` | Subscription ID |
+
+### Connection String em Produção
+
+Configure a connection string diretamente no Azure App Service:  
+**Configuration → Connection strings → `DefaultConnection`**
+
+> ⚠️ **Nunca commite a senha real no repositório.** Use variáveis de ambiente ou Azure Key Vault em produção.
+
+---
+
+## Exemplos de Requisição
+
+### Criar livro
+
+```http
+POST /api/v1/livros
+Content-Type: application/json
+
+{
+  "titulo": "Clean Code",
+  "autor": "Robert C. Martin",
+  "isbn": "978-0132350884"
+}
+```
+
+**Resposta (201 Created):**
+```json
+{
+  "sucesso": true,
+  "dados": {
+    "id": 5,
+    "titulo": "Clean Code",
+    "autor": "Robert C. Martin",
+    "isbn": "978-0132350884",
+    "createdAt": "2026-05-16T00:00:00Z"
+  }
+}
+```
+
+### Erro de validação
+
+```http
+POST /api/v1/livros
+Content-Type: application/json
+
+{ "titulo": "" }
+```
+
+**Resposta (400 Bad Request):**
+```json
+{
+  "sucesso": false,
+  "mensagem": "Dados inválidos.",
+  "erros": [
+    "O campo 'titulo' é obrigatório.",
+    "O campo 'autor' é obrigatório."
+  ]
+}
+```

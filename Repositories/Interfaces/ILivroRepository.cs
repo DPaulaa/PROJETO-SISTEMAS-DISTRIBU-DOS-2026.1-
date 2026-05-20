@@ -1,13 +1,17 @@
-using LivrariaRosa.Models.Entities;
+// Repositories/Interfaces/ILivroRepository.cs
+//
+// Define o "contrato" de acesso a dados de livros.
+// O restante da aplicação depende apenas desta interface.
+namespace BibliotecaRosa.Repositories.Interfaces;
 
-namespace LivrariaRosa.Repositories.Interfaces;
+using BibliotecaRosa.Models;
 
 public interface ILivroRepository
 {
-    Task<IEnumerable<Livro>> ListarTodosAsync(int pagina, int tamanhoPagina);
-    Task<int> ContarTotalAsync();
-    Task<Livro?> BuscarPorIdAsync(int id);
-    Task AdicionarAsync(Livro livro);
-    Task AtualizarAsync(Livro livro);
-    Task RemoverAsync(Livro livro);
+    IEnumerable<Livro> GetAll();
+    Livro? GetById(int id);
+    Livro? GetByIsbn(string isbn);
+    void Add(Livro livro);
+    void Update(Livro livro);
+    void Remove(Livro livro);
 }

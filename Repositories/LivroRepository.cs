@@ -1,56 +1,62 @@
-using Microsoft.EntityFrameworkCore;
-using LivrariaRosa.Data;
-using LivrariaRosa.Models.Entities;
-using LivrariaRosa.Repositories.Interfaces;
+// Repositories/LivroRepository.cs
+//
+// Camada de acesso a dados. Toda leitura e escrita de livros passa por aqui.
 
-namespace LivrariaRosa.Repositories;
+namespace BibliotecaRosa.Repositories;
+
+using BibliotecaRosa.Models;
+using BibliotecaRosa.Repositories.Interfaces;
 
 public class LivroRepository : ILivroRepository
 {
-    private readonly AppDbContext _db;
-
-    public LivroRepository(AppDbContext db)
+    // Dados de exemplo já carregados — em produção viriam do banco de dados
+    private readonly List<Livro> _livros = new()
     {
-        _db = db;
+        new Livro { Id = 1, Titulo = "O Senhor dos Anéis",   Autor = "J.R.R. Tolkien",           Isbn = "978-8533613379", CreatedAt = DateTime.UtcNow.AddDays(-180) },
+        new Livro { Id = 2, Titulo = "1984",                 Autor = "George Orwell",             Isbn = "978-8535914849", CreatedAt = DateTime.UtcNow.AddDays(-120) },
+        new Livro { Id = 3, Titulo = "Dom Casmurro",         Autor = "Machado de Assis",          Isbn = "978-8503011996", CreatedAt = DateTime.UtcNow.AddDays(-90)  },
+        new Livro { Id = 4, Titulo = "O Pequeno Príncipe",   Autor = "Antoine de Saint-Exupéry", Isbn = "978-8595081512", CreatedAt = DateTime.UtcNow.AddDays(-60)  },
+    };
+
+    private int _nextId = 5;
+    private readonly object _lock = new();
+
+    public IEnumerable<Livro> GetAll()
+    {
+        lock (_lock) return _livros.ToList();
     }
 
-    public async Task<IEnumerable<Livro>> ListarTodosAsync(int pagina, int tamanhoPagina)
+    public Livro? GetById(int id)
     {
-        return await _db.Livros
-            .OrderBy(l => l.Id)
-            .Skip((pagina - 1) * tamanhoPagina)
-            .Take(tamanhoPagina)
-            .ToListAsync();
+        lock (_lock) return _livros.FirstOrDefault(l => l.Id == id);
     }
 
-    public async Task<int> ContarTotalAsync()
+    public Livro? GetByIsbn(string isbn)
     {
-        return await _db.Livros.CountAsync();
+        lock (_lock) return _livros.FirstOrDefault(l => l.Isbn == isbn);
     }
 
-    public async Task<Livro?> BuscarPorIdAsync(int id)
+    public void Add(Livro livro)
     {
-        return await _db.Livros.FirstOrDefaultAsync(l => l.Id == id);
+        lock (_lock)
+        {
+            // Gera o próximo ID de forma segura mesmo com várias requisições simultâneas
+            livro.Id = Interlocked.Increment(ref _nextId) - 1;
+            _livros.Add(livro);
+        }
     }
 
-    public async Task AdicionarAsync(Livro livro)
+    public void Update(Livro livro)
     {
-        _db.Livros.Add(livro);
-        await _db.SaveChangesAsync();
+        lock (_lock)
+        {
+            var index = _livros.FindIndex(l => l.Id == livro.Id);
+            if (index >= 0) _livros[index] = livro;
+        }
     }
 
-    public async Task AtualizarAsync(Livro livro)
+    public void Remove(Livro livro)
     {
-        _db.Livros.Update(livro);
-        await _db.SaveChangesAsync();
-    }
-
-    // Soft delete: marca como inativo em vez de remover fisicamente
-    public async Task RemoverAsync(Livro livro)
-    {
-        livro.Ativo = false;
-        livro.ExcluidoEm = DateTime.UtcNow;
-        _db.Livros.Update(livro);
-        await _db.SaveChangesAsync();
+        lock (_lock) _livros.Remove(livro);
     }
 }

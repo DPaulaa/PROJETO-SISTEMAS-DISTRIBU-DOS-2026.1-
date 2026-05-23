@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Esse arquivo é usado pelo processo de publicação/pacote do seu projeto Web. É possível personalizar o comportamento deste processo
+ao editar este arquivo MSBuild. Para saber mais sobre isso, visite https://go.microsoft.com/fwlink/?LinkID=208121. 
+-->
+<Project>
+  <PropertyGroup>
+    <TimeStampOfAssociatedLegacyPublishXmlFile />
+    <EncryptedPassword>AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAAyGWYh+1mtEGFJqtbg9HOogAAAAACAAAAAAAQZgAAAAEAACAAAADfmf7+dXvceMzkEqXAn9RDVeNNxH8vLgM21rFSjxR32AAAAAAOgAAAAAIAACAAAABL7BbFDVlhUUTqUEGIP/zJT82HAMc24VzAfT3Cw2iKOYAAAADZaKaRNoasS6r3U68gK5xxFRn9WG6i8eKD0oy941M2/uqp/DSkR0iDxuHvDoLghLYfrvuuhMZ8BwgVPUdM1xByvE+xcb81zYAd5nVgNeibTgpYGI1QWIPQx42znpp9mw/8aTgBlvYAhJh3VlD64oGeud2obZBuDIrZkZEHh6sUiEAAAAD0XY6djo1PJq9l6dp5zQQyCq1IjDtD1fhJl1L463wZDYSERQm7ZgXVlzoZQM+dLeYPhlL/BKyh0CoSr50CZSBk</EncryptedPassword>
+    <History>False|2026-05-21T02:57:10.7508403Z||;False|2026-05-20T23:52:54.9699705-03:00||;</History>
+    <LastFailureDetails />
+  </PropertyGroup>
+  <ItemGroup>
+    <DestinationConnectionStrings Include="DefaultConnection">
+      <Value>Server=tcp:livrariarosaserver.database.windows.net,1433%3bInitial Catalog=livrariaRosaDB%3bPersist Security Info=False%3bUser ID=mountain%3bPassword=45%27A1a%2aL%3bMultipleActiveResultSets=False%3bEncrypt=True%3bTrustServerCertificate=False%3bConnection Timeout=30%3b</Value>
+    </DestinationConnectionStrings>
+  </ItemGroup>
+  <ItemGroup>
+    <EFMigrations Include="BibliotecaRosa.Data.AppDbContext">
+      <Value>Server=tcp:livrariarosaserver.database.windows.net,1433%3bInitial Catalog=livrariaRosaDB%3bPersist Security Info=False%3bUser ID=mountain%3bPassword=45%27A1a%2aL%3bMultipleActiveResultSets=False%3bEncrypt=True%3bTrustServerCertificate=False%3bConnection Timeout=30%3b</Value>
+    </EFMigrations>
+  </ItemGroup>
+</Project>

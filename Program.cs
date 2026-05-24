@@ -1,5 +1,5 @@
 // Program.cs — Biblioteca Rosa
-// 
+//
 // Registramos todos os serviços que serão usados pelos controllers,sempre pelo contrato (interface), não pela implementação direta.
 // Isso facilita futuras trocas — por exemplo, de memória para banco de dados.
 using BibliotecaRosa.Data;

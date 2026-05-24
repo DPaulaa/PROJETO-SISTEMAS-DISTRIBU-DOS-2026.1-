@@ -2715,11 +2715,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\bedpa\\Downloads\\BibliotecaRosa-SOLID\\BibliotecaRosa-SOLID-output\\BibliotecaRosa\\BibliotecaRosa.csproj",
+      "projectUniqueName": "C:\\inetpub\\PROJETO-SISTEMAS-DISTRIBU-DOS-2026.1--main\\BibliotecaRosa.csproj",
       "projectName": "BibliotecaRosa",
-      "projectPath": "C:\\Users\\bedpa\\Downloads\\BibliotecaRosa-SOLID\\BibliotecaRosa-SOLID-output\\BibliotecaRosa\\BibliotecaRosa.csproj",
+      "projectPath": "C:\\inetpub\\PROJETO-SISTEMAS-DISTRIBU-DOS-2026.1--main\\BibliotecaRosa.csproj",
       "packagesPath": "C:\\Users\\bedpa\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\bedpa\\Downloads\\BibliotecaRosa-SOLID\\BibliotecaRosa-SOLID-output\\BibliotecaRosa\\obj\\",
+      "outputPath": "C:\\inetpub\\PROJETO-SISTEMAS-DISTRIBU-DOS-2026.1--main\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

@@ -1,15 +1,16 @@
 // Migrations/AppDbContextModelSnapshot.cs
 
-using System;
+using BibliotecaRosa.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using System;
 
 #nullable disable
 
 namespace BibliotecaRosa.Migrations;
 
-[DbContext(typeof(AppDbContextModelSnapshot))]
+[DbContext(typeof(AppDbContext))]
 partial class AppDbContextModelSnapshot : ModelSnapshot
 {
     protected override void BuildModel(ModelBuilder modelBuilder)

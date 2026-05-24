@@ -1,19 +1,22 @@
 // Program.cs — Biblioteca Rosa
-// 
+//
 // Registramos todos os serviços que serão usados pelos controllers,sempre pelo contrato (interface), não pela implementação direta.
 // Isso facilita futuras trocas — por exemplo, de memória para banco de dados.
+using BibliotecaRosa.Data;
 using BibliotecaRosa.Middlewares;
 using BibliotecaRosa.Repositories;
 using BibliotecaRosa.Repositories.Interfaces;
 using BibliotecaRosa.Services;
 using BibliotecaRosa.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // ── Repositórios ──────────────────────────────────────────────────────────────
-// Singleton mantém os dados em memória enquanto o servidor estiver rodando.
-// Para usar banco de dados real (EF Core), troque para AddScoped<>().
-builder.Services.AddSingleton<ILivroRepository, LivroRepository>();
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddScoped<ILivroRepository, SqlLivroRepository>();
 
 // ── Serviços ──────────────────────────────────────────────────────────────────
 // Cada interface tem sua própria responsabilidade — auth, livros e diagnóstico são serviços separados e independentes entre si.
@@ -42,6 +45,12 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 var app = builder.Build();
+//── Migrations para o banco ───────────────────────────────────
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
 
 // ── Pipeline de middlewares ───────────────────────────────────
 

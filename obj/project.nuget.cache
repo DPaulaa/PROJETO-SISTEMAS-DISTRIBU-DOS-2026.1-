@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "IJpwY6Cxy/0=",
+  "dgSpecHash": "ydV8Xo3IxUQ=",
   "success": true,
-  "projectFilePath": "C:\\Users\\bedpa\\Downloads\\BibliotecaRosa-SOLID\\BibliotecaRosa-SOLID-output\\BibliotecaRosa\\BibliotecaRosa.csproj",
+  "projectFilePath": "C:\\inetpub\\PROJETO-SISTEMAS-DISTRIBU-DOS-2026.1--main\\BibliotecaRosa.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\bedpa\\.nuget\\packages\\azure.core\\1.47.1\\azure.core.1.47.1.nupkg.sha512",
     "C:\\Users\\bedpa\\.nuget\\packages\\azure.identity\\1.14.2\\azure.identity.1.14.2.nupkg.sha512",

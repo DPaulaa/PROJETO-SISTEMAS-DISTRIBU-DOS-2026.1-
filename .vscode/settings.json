@@ -1,0 +1,5 @@
+{
+    "appService.preDeployTask": "publish-release",
+    "appService.deploySubpath": "bin\\Release\\net10.0\\publish",
+    "appService.defaultWebAppToDeploy": "/subscriptions/58f2448d-901d-4c11-b0b7-d6e77c20d327/resourceGroups/TrabalhoMontanhaAPI/providers/Microsoft.Web/sites/livrariaRosa"
+}

@@ -2,10 +2,6 @@
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ActiveDebugProfile>https</ActiveDebugProfile>
-<<<<<<< HEAD
     <NameOfLastUsedPublishProfile>C:\inetpub\PROJETO-SISTEMAS-DISTRIBU-DOS-2026.1--main\Properties\PublishProfiles\livrariaRosa - FTP.pubxml</NameOfLastUsedPublishProfile>
-=======
-    <NameOfLastUsedPublishProfile>livrariaRosa - Web Deploy</NameOfLastUsedPublishProfile>
->>>>>>> 8010cda7daf9daf623551922f7fb01f86921e8a5
   </PropertyGroup>
 </Project>

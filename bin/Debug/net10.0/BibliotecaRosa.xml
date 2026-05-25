@@ -28,6 +28,18 @@
         <member name="M:BibliotecaRosa.Controllers.SecureController.GetSecureLivros">
             <summary>Lista livros — requer header Authorization: Basic &lt;token&gt;.</summary>
         </member>
+        <member name="T:BibliotecaRosa.Migrations.CriarEstruturaFinal">
+            <inheritdoc />
+        </member>
+        <member name="M:BibliotecaRosa.Migrations.CriarEstruturaFinal.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:BibliotecaRosa.Migrations.CriarEstruturaFinal.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:BibliotecaRosa.Migrations.CriarEstruturaFinal.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
         <member name="T:BibliotecaRosa.Models.DTOs.LivroRequest">
             <summary>Dados que o cliente envia ao criar ou atualizar um livro.</summary>
         </member>

@@ -13,6 +13,7 @@ public class AppDbContext : DbContext
 
     public DbSet<Livro> Livros => Set<Livro>();
     public DbSet<Emprestimo> Emprestimos => Set<Emprestimo>();
+    public DbSet<Pessoa> Pessoas => Set<Pessoa>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Livro>(entity =>

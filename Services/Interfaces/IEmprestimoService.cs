@@ -10,6 +10,6 @@ public interface IEmprestimoService
     EmprestimoResponse Create(Emprestimo emprestimo);
     EmprestimoResponse Update(int id, Emprestimo emprestimo);
     void Delete(int id);
-    void Emprestar(EmprestimoRequest emprestimo);
-    void Devolver(EmprestimoRequest emprestimo);
+    EmprestimoResponse Emprestar(EmprestimoRequest emprestimo);
+    EmprestimoResponse Devolver(int idEmprestimo);
 }

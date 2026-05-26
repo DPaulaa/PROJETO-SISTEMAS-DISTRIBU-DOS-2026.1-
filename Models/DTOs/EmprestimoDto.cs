@@ -4,6 +4,8 @@ namespace BibliotecaRosa.Models.DTOs;
 
 public class EmprestimoRequest
 {
+    public int Id { get; set; }
+
     [Required(ErrorMessage = "É necessário selecionar uma pessoa.")]
     public int PessoaId { get; set; }
 

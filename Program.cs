@@ -17,11 +17,13 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<ILivroRepository, SqlLivroRepository>();
+builder.Services.AddScoped<IUsuarioRepository, SqlUsuarioRepository>();
 
 // ── Serviços ──────────────────────────────────────────────────────────────────
 // Cada interface tem sua própria responsabilidade — auth, livros e diagnóstico são serviços separados e independentes entre si.
 builder.Services.AddScoped<ILivroService,       LivroService>();
 builder.Services.AddScoped<IAuthService,        AuthService>();
+builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddScoped<IDiagnosticoService, DiagnosticoService>();
 
 // ── Controllers ───────────────────────────────────────────────────────────────

@@ -37,6 +37,17 @@ public class ExceptionHandlingMiddleware
             _logger.LogError(ex, "Erro interno em {Path}", context.Request.Path);
             await Responder(context, 500, "Ocorreu um erro interno. Tente novamente.");
         }
+
+        try
+        {
+            await _next(context);
+        }
+        catch (ConflitoException ex)
+        {
+            context.Response.StatusCode = StatusCodes.Status409Conflict;
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsJsonAsync(new { mensagem = ex.Message });
+        }
     }
 
     private static Task Responder(HttpContext ctx, int status, string mensagem)

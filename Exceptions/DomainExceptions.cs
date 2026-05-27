@@ -13,3 +13,8 @@ public class RegraDeNegocioException : Exception
 {
     public RegraDeNegocioException(string mensagem) : base(mensagem) { }
 }
+
+public class ConflitoException : Exception
+    {
+        public ConflitoException(string mensagem) : base(mensagem) { }
+    }

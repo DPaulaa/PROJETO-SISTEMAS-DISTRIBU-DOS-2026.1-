@@ -1,7 +1,13 @@
 // Middlewares/ExceptionHandlingMiddleware.cs
 //
-// Intercepta qualquer erro que aconteça durante uma requisição e devolve uma resposta organizada ao cliente (com status HTTP e mensagem legível).
+// Intercepta qualquer erro que aconteça durante uma requisição e devolve
+// uma resposta organizada ao cliente (com status HTTP e mensagem legível).
 // Assim os controllers ficam limpos — sem blocos try/catch espalhados.
+//
+// CORREÇÃO: o arquivo original tinha dois blocos InvokeAsync aninhados —
+// _next() era chamado duas vezes e o catch de ConflitoException nunca era
+// alcançado. Unificado em um único bloco com todos os catches em sequência.
+
 namespace BibliotecaRosa.Middlewares;
 
 using BibliotecaRosa.Exceptions;
@@ -31,22 +37,25 @@ public class ExceptionHandlingMiddleware
         {
             await Responder(context, 400, ex.Message);
         }
+        catch (ConflitoException ex)
+        {
+            await Responder(context, 409, ex.Message);
+        }
+        catch (ArgumentException ex)
+        {
+            // ValidacaoEmprestimo lança ArgumentException para dados inválidos → 400
+            await Responder(context, 400, ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Livro indisponível, empréstimo já devolvido, limite de empréstimos → 400
+            await Responder(context, 400, ex.Message);
+        }
         catch (Exception ex)
         {
             // O detalhe do erro vai para o log interno — o cliente recebe só uma mensagem genérica
             _logger.LogError(ex, "Erro interno em {Path}", context.Request.Path);
             await Responder(context, 500, "Ocorreu um erro interno. Tente novamente.");
-        }
-
-        try
-        {
-            await _next(context);
-        }
-        catch (ConflitoException ex)
-        {
-            context.Response.StatusCode = StatusCodes.Status409Conflict;
-            context.Response.ContentType = "application/json";
-            await context.Response.WriteAsJsonAsync(new { mensagem = ex.Message });
         }
     }
 

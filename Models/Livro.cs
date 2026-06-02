@@ -9,4 +9,5 @@ public class Livro
     public string Autor { get; set; } = string.Empty;
     public string Isbn { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public int QuantidadeDisponivel { get; set; } = 0;
 }

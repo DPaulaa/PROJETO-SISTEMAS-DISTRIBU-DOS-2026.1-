@@ -4,10 +4,12 @@
 // Isso facilita futuras trocas — por exemplo, de memória para banco de dados.
 using BibliotecaRosa.Data;
 using BibliotecaRosa.Middlewares;
+using BibliotecaRosa.Models;
 using BibliotecaRosa.Repositories;
 using BibliotecaRosa.Repositories.Interfaces;
 using BibliotecaRosa.Services;
 using BibliotecaRosa.Services.Interfaces;
+using BibliotecaRosa.Services.Validation;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,6 +20,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddScoped<ILivroRepository, SqlLivroRepository>();
 builder.Services.AddScoped<IUsuarioRepository, SqlUsuarioRepository>();
+builder.Services.AddScoped<IEmprestimoRepository, EmprestimoRepository>();
+builder.Services.AddScoped<IPessoaRepository, PessoaRepository>();
 
 // ── Serviços ──────────────────────────────────────────────────────────────────
 // Cada interface tem sua própria responsabilidade — auth, livros e diagnóstico são serviços separados e independentes entre si.
@@ -25,6 +29,8 @@ builder.Services.AddScoped<ILivroService,       LivroService>();
 builder.Services.AddScoped<IAuthService,        AuthService>();
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddScoped<IDiagnosticoService, DiagnosticoService>();
+builder.Services.AddScoped<IEmprestimoService,  EmprestimoService>();
+builder.Services.AddScoped<ValidacaoEmprestimo>();
 
 // ── Controllers ───────────────────────────────────────────────────────────────
 builder.Services.AddControllers();

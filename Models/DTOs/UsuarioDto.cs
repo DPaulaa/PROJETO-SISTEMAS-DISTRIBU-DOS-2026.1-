@@ -1,10 +1,21 @@
 using BibliotecaRosa.Enums;
+using System.ComponentModel.DataAnnotations;
 
-namespace BibliotecaRosa.Models.DTOs
+namespace BibliotecaRosa.Models.DTOs;
+
+public record UsuarioCadastroDto(string Nome, string Email, string Senha, Role Perfil);
+
+public record UsuarioRespostaDto(int Id, string Nome, string Email, Role Perfil);
+
+public class UsuarioAtualizacaoDto
 {
-    // DTO de entrada para criação/atualização
-    public record UsuarioCadastroDto(string Nome, string Email, string Senha, Role Perfil);
+    [MaxLength(100)]
+    public string? Nome { get; set; }
 
-    // DTO de saída para respostas da API (não mostra a senha)
-    public record UsuarioRespostaDto(int Id, string Nome, string Email, Role Perfil);
+    [MaxLength(150)]
+    [EmailAddress]
+    public string? Email { get; set; }
+
+    [MinLength(6, ErrorMessage = "Senha deve ter ao menos 6 caracteres.")]
+    public string? Senha { get; set; }
 }

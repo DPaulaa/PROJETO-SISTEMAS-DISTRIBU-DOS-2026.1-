@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using BibliotecaRosa.Models;
 
 namespace BibliotecaRosa.Data;
@@ -9,23 +9,13 @@ public class AppDbContext : DbContext
 
     public DbSet<Livro> Livros => Set<Livro>();
     public DbSet<Emprestimo> Emprestimos => Set<Emprestimo>();
-    public DbSet<Pessoa> Pessoas => Set<Pessoa>();
     public DbSet<Usuario> Usuarios { get; set; }
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        base.OnConfiguring(optionsBuilder);
-
-        // Ignora o aviso de dados dinâmicos do .NET 10
-        optionsBuilder.ConfigureWarnings(warnings =>
-            warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
-    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        #region Configurações da Tabela Livro
+        #region Livro
         modelBuilder.Entity<Livro>(entity =>
         {
             entity.HasKey(l => l.Id);
@@ -37,11 +27,11 @@ public class AppDbContext : DbContext
         });
 
         modelBuilder.Entity<Livro>().HasData(
-            new Livro { Id = 1, Titulo = "O Senhor dos Anéis", Autor = "J.R.R. Tolkien", Isbn = "9788533613379", CreatedAt = new System.DateTime(2025, 1, 1, 0, 0, 0, System.DateTimeKind.Utc) }
+            new Livro { Id = 1, Titulo = "O Senhor dos Anéis", Autor = "J.R.R. Tolkien", Isbn = "9788533613379", CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
         );
         #endregion
 
-        #region Configurações da Tabela Usuário
+        #region Usuario
         modelBuilder.Entity<Usuario>(entity =>
         {
             entity.HasIndex(u => u.Email).IsUnique();
@@ -56,42 +46,22 @@ public class AppDbContext : DbContext
         );
         #endregion
 
+        #region Emprestimo
         modelBuilder.Entity<Emprestimo>(entity =>
         {
             entity.HasKey(e => e.Id);
 
             entity.HasOne(e => e.Livro)
                   .WithMany()
-                  .HasForeignKey("LivroId");
+                  .HasForeignKey(e => e.LivroId);
 
-            entity.HasOne(e => e.Pessoa)
+            entity.HasOne(e => e.Usuario)
                   .WithMany()
-                  .HasForeignKey("PessoaId");
+                  .HasForeignKey(e => e.UsuarioId);
 
             entity.Property(e => e.DataEmprestimo)
                   .HasDefaultValueSql("GETUTCDATE()");
         });
-
-        modelBuilder.Entity<Pessoa>(entity =>
-        {
-            entity.HasKey(p => p.Id);
-
-            entity.Property(p => p.Nome)
-                  .IsRequired()
-                  .HasMaxLength(100);
-
-            entity.Property(p => p.Email)
-                  .HasMaxLength(100);
-
-            entity.Property(p => p.Telefone)
-                  .HasMaxLength(20);
-
-            entity.Property(p => p.CpfCnpj)
-                  .HasMaxLength(20);
-
-            entity.Property(p => p.TipoPessoa)
-                .HasConversion<string>()
-                .IsRequired();
-        });
+        #endregion
     }
 }

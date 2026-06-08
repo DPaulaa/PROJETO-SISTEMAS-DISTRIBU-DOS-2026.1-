@@ -7,9 +7,17 @@ public interface IEmprestimoService
 {
     IEnumerable<EmprestimoResponse> GetAll();
     EmprestimoResponse GetById(int id);
-    EmprestimoResponse Create(Emprestimo emprestimo);
-    EmprestimoResponse Update(int id, Emprestimo emprestimo);
     void Delete(int id);
-    EmprestimoResponse Emprestar(EmprestimoRequest emprestimo);
+    EmprestimoResponse Emprestar(EmprestimoRequest request);
     EmprestimoResponse Devolver(int idEmprestimo);
+
+    // Admin
+    IEnumerable<EmprestimoResponse> GetAllAdmin();
+    IEnumerable<EmprestimoResponse> GetByUsuario(int usuarioId);
+    EmprestimoResponse ForcarDevolucao(int idEmprestimo);
+    IEnumerable<RelatorioLivroDto> GetRelatorioMaisEmprestados();
+
+    // Histórico
+    IEnumerable<EmprestimoResponse> GetHistoricoDoUsuario(int usuarioId);
+    IEnumerable<EmprestimoResponse> GetMeusEmprestimosAtivos(int usuarioId);
 }

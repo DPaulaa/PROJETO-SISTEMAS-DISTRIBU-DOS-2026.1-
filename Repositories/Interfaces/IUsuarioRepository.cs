@@ -1,12 +1,13 @@
 using BibliotecaRosa.Models;
 
-namespace BibliotecaRosa.Repositories.Interfaces
+namespace BibliotecaRosa.Repositories.Interfaces;
+
+public interface IUsuarioRepository
 {
-    public interface IUsuarioRepository
-    {
-        Task<IEnumerable<Usuario>> BuscarTodosAsync();
-        Task<Usuario?> BuscarPorIdAsync(int id);
-        Task<Usuario?> BuscarPorEmailAsync(string email);
-        Task AdicionarAsync(Usuario usuario);
-    }
+    Task<IEnumerable<Usuario>> BuscarTodosAsync();
+    Task<Usuario?> BuscarPorIdAsync(int id);
+    Task<Usuario?> BuscarPorEmailAsync(string email);
+    Task AdicionarAsync(Usuario usuario);
+    Task AtualizarAsync(Usuario usuario);
+    Task RemoverAsync(Usuario usuario);
 }

@@ -1,85 +1,148 @@
-<h1 align="center" style="color:#c2559c;">Biblioteca Rosa</h1>
+# Biblioteca Rosa 📚
 
-<p align="center">
-  API REST para controle básico de acervo de uma biblioteca universitária.<br/>
-  Desenvolvida em <strong>ASP.NET Core (.NET 10)</strong> como projeto prático da disciplina de <strong>Sistemas Distribuídos — UniBH 2026/1</strong>.
-</p>
+Sistema de gerenciamento de empréstimos de livros — Projeto de Sistemas Distribuídos (2026/1).
 
 ---
 
-## O que a API faz
-
-A Biblioteca Rosa expõe endpoints HTTP para gerenciar o catálogo de livros de uma biblioteca. Através dela é possível listar, cadastrar, editar e remover livros, além de um endpoint protegido por token para operações autenticadas.
-
-**Funcionalidades implementadas:**
-- CRUD completo de livros (`GET`, `POST`, `PUT`, `DELETE`)
-- Validação de ISBN duplicado ao cadastrar
-- Endpoint protegido com autenticação via header `Authorization: Basic <token>`
-- Tratamento centralizado de erros (middleware global)
-- Endpoint de diagnóstico com informações do servidor
-- Documentação interativa via Swagger (`/swagger`)
-
----
-
-## Endpoints principais
-
-| Método | Rota | Descrição |
-|--------|------|-----------|
-| GET | `/api/v1/livros` | Lista todos os livros |
-| GET | `/api/v1/livros/{id}` | Busca um livro por ID |
-| POST | `/api/v1/livros` | Cadastra um novo livro |
-| PUT | `/api/v1/livros/{id}` | Atualiza um livro existente |
-| DELETE | `/api/v1/livros/{id}` | Remove um livro |
-| GET | `/api/v1/secure/livros` | Lista livros (requer token) |
-| GET | `/api/v1/debug/info` | Informações do servidor |
-| GET | `/api/v1/debug/crash` | Simula um erro 500 (apenas para testes) |
-
-Para acessar o endpoint seguro, envie o header:
-```
-Authorization: Basic <token configurado no appsettings.json>
-```
-
----
-
-## Estrutura do projeto
+## Arquitetura
 
 ```
-BibliotecaRosa/
-├── Controllers/        # Recebem as requisições HTTP e devolvem respostas
-├── Services/           # Regras de negócio (validações, lógica)
-│   └── Interfaces/     # Contratos que definem o que cada serviço faz
-├── Repositories/       # Acesso aos dados (atualmente em memória)
-│   └── Interfaces/
-├── Models/             # Representação dos dados
-│   └── DTOs/           # Formatos de entrada (Request) e saída (Response)
-├── Middlewares/        # Tratamento global de erros
-├── Exceptions/         # Exceções personalizadas do domínio
-└── Program.cs          # Configuração e inicialização da aplicação
+Controllers/        → Camada HTTP: recebe requisições, retorna respostas
+Services/           → Regras de negócio
+  Interfaces/       → Contratos dos serviços
+  Validation/       → Validações de domínio (empréstimos)
+Repositories/       → Acesso ao banco de dados (EF Core)
+  Interfaces/       → Contratos dos repositórios
+Models/             → Entidades e DTOs
+  DTOs/             → Objetos de transferência (Request/Response)
+Migrations/         → Histórico de schema do banco
+Data/               → AppDbContext
+Middlewares/        → Tratamento global de exceções
+Enums/              → Enumerações (Role)
+Exceptions/         → Exceções de domínio customizadas
 ```
 
-> **Nota:** Os dados são armazenados em memória e se perdem ao reiniciar o servidor. Para persistência real, basta implementar um repositório com EF Core e trocar o registro no `Program.cs`.
+**Stack:** .NET 10 · Entity Framework Core · SQL Server · JWT Bearer · BCrypt · Swagger
 
 ---
 
-## Princípios aplicados (SOLID)
+## Autenticação JWT
 
-O projeto foi estruturado seguindo os princípios SOLID como exercício prático:
+### Fluxo
 
-- **S** — Cada classe tem uma única responsabilidade (controller só trata HTTP, service só aplica regras, repository só acessa dados)
-- **O** — Novas funcionalidades podem ser adicionadas sem modificar o que já existe (ex: novo tipo de auth cria uma nova classe, não altera a existente)
-- **L** — Qualquer implementação de repositório ou serviço pode ser substituída sem quebrar o restante
-- **I** — Interfaces separadas por responsabilidade (`ILivroService`, `IAuthService`, `IDiagnosticoService`)
-- **D** — Controllers e serviços dependem de interfaces, não de implementações concretas
+1. `POST /api/v1/auth/login` com `{ email, senha }`
+2. API retorna um token JWT
+3. Use o token no header: `Authorization: Bearer <token>`
+4. Token expira em 8 horas
+
+### No Swagger
+
+Clique em **Authorize** (cadeado) → Cole o token → **Authorize**.
+
+### Configuração (User Secrets — produção)
+
+```bash
+dotnet user-secrets set "Jwt:Key" "sua-chave-secreta-forte-minimo-32-chars"
+```
+
+> ⚠️ Nunca commite a chave JWT real no repositório.
 
 ---
 
-## Alunos
+## Endpoints
 
-| Matrícula | Nome |
-|-----------|------|
-| 1221141558 | Lucas Figueiredo de Almeida Castilho Soares |
-| 125111410617 | Livia Steise Gaspar Diniz |
-| 125111382859 | Augusto Felipe de Paula Coimbra |
-| 125111385813 | Bernardo de Paula Dias |
-| 125111401298 | Henrique Márcio Dias Alves |
-| 125111404838 | Luiz Guilherme Vilaça de Moraes |
+### 🔐 Autenticação (`/api/v1/auth`)
+
+| Método | Rota | Descrição | Auth |
+|--------|------|-----------|------|
+| POST | `/login` | Gera token JWT | Público |
+| POST | `/registrar` | Cadastra novo usuário | Público |
+
+### 👤 Usuários (`/api/v1/usuarios`)
+
+| Método | Rota | Descrição | Auth |
+|--------|------|-----------|------|
+| GET | `/` | Lista todos os usuários | Admin |
+| GET | `/{id}` | Busca usuário por ID | Admin ou próprio |
+| PUT | `/{id}` | Atualiza usuário | Admin ou próprio |
+| DELETE | `/{id}` | Remove usuário | Admin |
+| GET | `/{id}/emprestimos` | Empréstimos de um usuário | Admin |
+
+### 📖 Livros (`/api/v1/livros`)
+
+| Método | Rota | Descrição | Auth |
+|--------|------|-----------|------|
+| GET | `/` | Lista todos os livros | Autenticado |
+| GET | `/{id}` | Busca livro por ID | Autenticado |
+| POST | `/` | Cadastra livro | Admin |
+| PUT | `/{id}` | Atualiza livro | Admin |
+| DELETE | `/{id}` | Remove livro | Admin |
+
+### 📋 Empréstimos (`/api/v1/emprestimos`)
+
+| Método | Rota | Descrição | Auth |
+|--------|------|-----------|------|
+| GET | `/meus-emprestimos` | Empréstimos ativos do usuário logado | Autenticado |
+| GET | `/historico` | Histórico: usuário vê só o seu, admin vê tudo | Autenticado |
+| GET | `/{id}` | Busca empréstimo por ID | Autenticado |
+| POST | `/emprestar` | Realiza um empréstimo | Autenticado |
+| PUT | `/devolver/{id}` | Registra devolução | Autenticado |
+| GET | `/admin/todos` | Lista todos (incluindo devolvidos) | Admin |
+| PUT | `/admin/{id}/forcar-devolucao` | Força devolução | Admin |
+| GET | `/admin/relatorio/mais-emprestados` | Livros mais emprestados | Admin |
+
+---
+
+## Regras de Negócio
+
+### Limites de empréstimos por perfil
+
+| Perfil | Limite ativo | Prazo de devolução |
+|--------|-------------|-------------------|
+| Aluno | 3 | 10 dias |
+| Professor | 5 | 30 dias |
+| Administrador | Sem limite | 30 dias |
+
+### Validações de empréstimo
+
+- ✅ Livro deve ter `QuantidadeDisponivel > 0`
+- ✅ Usuário não pode ter o mesmo livro emprestado duas vezes simultaneamente
+- ✅ Usuário não pode ultrapassar seu limite de empréstimos ativos
+- ✅ Empréstimos são imutáveis (sem delete físico)
+
+### Permissões especiais do Admin
+
+- Pode emprestar livros para qualquer usuário (passando `UsuarioId` no body)
+- Pode forçar devolução de qualquer empréstimo
+- Acessa histórico completo de todos os usuários
+- Visualiza relatório de livros mais emprestados
+
+---
+
+## Usuários de teste (seed)
+
+| Nome | E-mail | Senha | Role |
+|------|--------|-------|------|
+| Admin Rosa | admin@rosa.com | admin123 | Administrador |
+| Professor Girafales | professor@rosa.com | admin123 | Professor |
+| Aluno Chaves | aluno@rosa.com | admin123 | Aluno |
+
+> Senha padrão: `admin123` (hash BCrypt pré-gerado no seed)
+
+---
+
+## Como rodar localmente
+
+```bash
+# Restaurar dependências
+dotnet restore
+
+# Configurar User Secrets (JWT)
+dotnet user-secrets set "Jwt:Key" "chave-secreta-forte-minimo-32-chars!!"
+
+# Rodar (migrations são aplicadas automaticamente)
+dotnet run
+
+# Acessar Swagger
+# http://localhost:5000/swagger
+```

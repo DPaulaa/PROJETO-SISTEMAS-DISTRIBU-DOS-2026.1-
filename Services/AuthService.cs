@@ -1,43 +1,73 @@
-// Services/AuthService.cs
-//
-// Serviço responsável por verificar se uma requisição está autorizada.
-// Lê o token do cabeçalho e compara com o valor configurado no appsettings.
-// Se precisarmos trocar para JWT no futuro, criamos outro serviço com o mesmo contrato (IAuthService) — sem alterar controllers ou outros serviços.
 namespace BibliotecaRosa.Services;
 
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using BibliotecaRosa.Exceptions;
+using BibliotecaRosa.Models.DTOs;
+using BibliotecaRosa.Repositories.Interfaces;
 using BibliotecaRosa.Services.Interfaces;
+using Microsoft.IdentityModel.Tokens;
 
 public class AuthService : IAuthService
 {
+    private readonly IUsuarioRepository _usuarioRepo;
     private readonly IConfiguration _config;
     private readonly ILogger<AuthService> _logger;
 
-    public AuthService(IConfiguration config, ILogger<AuthService> logger)
+    public AuthService(IUsuarioRepository usuarioRepo, IConfiguration config, ILogger<AuthService> logger)
     {
+        _usuarioRepo = usuarioRepo;
         _config = config;
         _logger = logger;
     }
 
-    public bool IsAuthorized(string? authHeader)
+    public async Task<LoginResponse> LoginAsync(LoginRequest request)
     {
-        // O token válido vem do arquivo de configuração (appsettings.json), não do código-fonte
-        var validToken = _config["Auth:Token"]
-            ?? throw new InvalidOperationException("Auth:Token não configurado.");
+        var usuario = await _usuarioRepo.BuscarPorEmailAsync(request.Email)
+            ?? throw new RecursoNaoEncontradoException("E-mail ou senha inválidos.");
 
-        if (string.IsNullOrWhiteSpace(authHeader))
+        bool senhaValida = BCrypt.Net.BCrypt.Verify(request.Senha, usuario.SenhaHash);
+        if (!senhaValida)
+            throw new RecursoNaoEncontradoException("E-mail ou senha inválidos.");
+
+        var chaveJwt = _config["Jwt:Key"]
+            ?? throw new InvalidOperationException("Jwt:Key não configurada.");
+        var issuer = _config["Jwt:Issuer"] ?? "BibliotecaRosa";
+        var audience = _config["Jwt:Audience"] ?? "BibliotecaRosaClientes";
+
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(chaveJwt));
+        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        var expiracao = DateTime.UtcNow.AddHours(8);
+
+        var claims = new[]
         {
-            _logger.LogWarning("Requisição sem header de autorização.");
-            return false;
-        }
+            new Claim(JwtRegisteredClaimNames.Sub, usuario.Id.ToString()),
+            new Claim(JwtRegisteredClaimNames.Email, usuario.Email),
+            new Claim(ClaimTypes.Name, usuario.Nome),
+            new Claim(ClaimTypes.Role, usuario.Role.ToString()),
+            new Claim("role_id", ((int)usuario.Role).ToString()),
+        };
 
-        var token = authHeader.StartsWith("Basic ", StringComparison.OrdinalIgnoreCase)
-            ? authHeader["Basic ".Length..].Trim()
-            : authHeader.Trim();
+        var token = new JwtSecurityToken(
+            issuer: issuer,
+            audience: audience,
+            claims: claims,
+            expires: expiracao,
+            signingCredentials: creds
+        );
 
-        var autorizado = token == validToken;
-        if (!autorizado)
-            _logger.LogWarning("Token inválido recebido.");
+        var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
 
-        return autorizado;
+        _logger.LogInformation("Login realizado: UsuarioId={Id}, Role={Role}", usuario.Id, usuario.Role);
+
+        return new LoginResponse
+        {
+            Token = tokenString,
+            Nome = usuario.Nome,
+            Email = usuario.Email,
+            Role = usuario.Role.ToString(),
+            Expiracao = expiracao
+        };
     }
 }

@@ -1,27 +1,29 @@
-// Controllers/UsuariosController.cs
-//
-// CORREÇÃO BUG 6: a rota estava como "api/[controller]" (resolvia para "api/Usuarios")
-// enquanto todos os outros controllers usam o padrão explícito "api/v1/...".
-// Corrigido para "api/v1/usuarios" + adicionada tag do Swagger e ProducesResponseType.
-
 using BibliotecaRosa.Models.DTOs;
 using BibliotecaRosa.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace BibliotecaRosa.Controllers;
 
 [ApiController]
 [Route("api/v1/usuarios")]
 [Tags("Usuários")]
+[Authorize]
 public class UsuariosController : ControllerBase
 {
     private readonly IUsuarioService _usuarioService;
+    private readonly IEmprestimoService _emprestimoService;
 
-    public UsuariosController(IUsuarioService usuarioService) =>
+    public UsuariosController(IUsuarioService usuarioService, IEmprestimoService emprestimoService)
+    {
         _usuarioService = usuarioService;
+        _emprestimoService = emprestimoService;
+    }
 
-    /// <summary>Lista todos os usuários cadastrados.</summary>
+    /// <summary>Lista todos os usuários (somente Admin).</summary>
     [HttpGet]
+    [Authorize(Roles = "Administrador")]
     [ProducesResponseType(typeof(IEnumerable<UsuarioRespostaDto>), 200)]
     public async Task<IActionResult> ObterTodos()
     {
@@ -29,14 +31,66 @@ public class UsuariosController : ControllerBase
         return Ok(usuarios);
     }
 
-    /// <summary>Cadastra um novo usuário.</summary>
-    [HttpPost]
-    [ProducesResponseType(typeof(UsuarioRespostaDto), 201)]
-    [ProducesResponseType(400)]
-    [ProducesResponseType(409)]
-    public async Task<IActionResult> Cadastrar([FromBody] UsuarioCadastroDto dto)
+    /// <summary>Busca um usuário por ID (Admin ou o próprio usuário).</summary>
+    [HttpGet("{id:int}")]
+    [ProducesResponseType(typeof(UsuarioRespostaDto), 200)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(404)]
+    public async Task<IActionResult> ObterPorId(int id)
     {
-        var novoUsuario = await _usuarioService.CadastrarAsync(dto);
-        return CreatedAtAction(nameof(ObterTodos), new { id = novoUsuario.Id }, novoUsuario);
+        var usuarioLogadoId = ObterUsuarioLogadoId();
+        var isAdmin = User.IsInRole("Administrador");
+
+        if (!isAdmin && usuarioLogadoId != id)
+            return Forbid();
+
+        var usuario = await _usuarioService.ObterPorIdAsync(id);
+        return Ok(usuario);
+    }
+
+    /// <summary>Atualiza dados de um usuário (Admin ou o próprio usuário).</summary>
+    [HttpPut("{id:int}")]
+    [ProducesResponseType(typeof(UsuarioRespostaDto), 200)]
+    [ProducesResponseType(403)]
+    [ProducesResponseType(404)]
+    public async Task<IActionResult> Atualizar(int id, [FromBody] UsuarioAtualizacaoDto dto)
+    {
+        var usuarioLogadoId = ObterUsuarioLogadoId();
+        var isAdmin = User.IsInRole("Administrador");
+
+        if (!isAdmin && usuarioLogadoId != id)
+            return Forbid();
+
+        var atualizado = await _usuarioService.AtualizarAsync(id, dto);
+        return Ok(atualizado);
+    }
+
+    /// <summary>Remove um usuário (somente Admin).</summary>
+    [HttpDelete("{id:int}")]
+    [Authorize(Roles = "Administrador")]
+    [ProducesResponseType(204)]
+    [ProducesResponseType(404)]
+    public async Task<IActionResult> Remover(int id)
+    {
+        await _usuarioService.RemoverAsync(id);
+        return NoContent();
+    }
+
+    /// <summary>Lista empréstimos de um usuário específico (somente Admin).</summary>
+    [HttpGet("{id:int}/emprestimos")]
+    [Authorize(Roles = "Administrador")]
+    [ProducesResponseType(typeof(IEnumerable<EmprestimoResponse>), 200)]
+    public IActionResult EmprestimosPorUsuario(int id)
+    {
+        var emprestimos = _emprestimoService.GetByUsuario(id);
+        return Ok(emprestimos);
+    }
+
+    private int ObterUsuarioLogadoId()
+    {
+        var sub = User.FindFirstValue(ClaimTypes.NameIdentifier)
+               ?? User.FindFirstValue("sub")
+               ?? "0";
+        return int.TryParse(sub, out var id) ? id : 0;
     }
 }

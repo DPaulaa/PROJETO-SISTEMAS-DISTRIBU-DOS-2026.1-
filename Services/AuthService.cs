@@ -1,43 +1,47 @@
-// Services/AuthService.cs
-//
-// Serviço responsável por verificar se uma requisição está autorizada.
-// Lê o token do cabeçalho e compara com o valor configurado no appsettings.
-// Se precisarmos trocar para JWT no futuro, criamos outro serviço com o mesmo contrato (IAuthService) — sem alterar controllers ou outros serviços.
-namespace BibliotecaRosa.Services;
-
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using BibliotecaRosa.Services.Interfaces;
+using Microsoft.IdentityModel.Tokens;
+
+namespace BibliotecaRosa.Services;
 
 public class AuthService : IAuthService
 {
-    private readonly IConfiguration _config;
-    private readonly ILogger<AuthService> _logger;
+    private readonly IConfiguration _configuration;
 
-    public AuthService(IConfiguration config, ILogger<AuthService> logger)
+    public AuthService(IConfiguration configuration)
     {
-        _config = config;
-        _logger = logger;
+        _configuration = configuration;
     }
 
-    public bool IsAuthorized(string? authHeader)
+    public string GerarToken(string email, string role)
     {
-        // O token válido vem do arquivo de configuração (appsettings.json), não do código-fonte
-        var validToken = _config["Auth:Token"]
-            ?? throw new InvalidOperationException("Auth:Token não configurado.");
+        var jwtKey = _configuration["Jwt:Key"]
+            ?? throw new InvalidOperationException("Jwt:Key não configurada.");
+        var jwtIssuer = _configuration["Jwt:Issuer"]
+            ?? throw new InvalidOperationException("Jwt:Issuer não configurada.");
+        var jwtAudience = _configuration["Jwt:Audience"]
+            ?? throw new InvalidOperationException("Jwt:Audience não configurada.");
 
-        if (string.IsNullOrWhiteSpace(authHeader))
+        var claims = new[]
         {
-            _logger.LogWarning("Requisição sem header de autorização.");
-            return false;
-        }
+            new Claim(ClaimTypes.NameIdentifier, email),
+            new Claim(ClaimTypes.Email, email),
+            new Claim(ClaimTypes.Role, role)
+        };
 
-        var token = authHeader.StartsWith("Basic ", StringComparison.OrdinalIgnoreCase)
-            ? authHeader["Basic ".Length..].Trim()
-            : authHeader.Trim();
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
+        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-        var autorizado = token == validToken;
-        if (!autorizado)
-            _logger.LogWarning("Token inválido recebido.");
+        var token = new JwtSecurityToken(
+            issuer: jwtIssuer,
+            audience: jwtAudience,
+            claims: claims,
+            expires: DateTime.UtcNow.AddHours(8),
+            signingCredentials: credentials
+        );
 
-        return autorizado;
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }

@@ -1,3 +1,4 @@
+using BibliotecaRosa.Enums;
 using BibliotecaRosa.Exceptions;
 using BibliotecaRosa.Models;
 using BibliotecaRosa.Models.DTOs;
@@ -58,6 +59,19 @@ public class EmprestimoService : IEmprestimoService
         // Verifica se o livro está disponível
         if (livro.QuantidadeDisponivel <= 0)
             throw new RegraDeNegocioException($"Livro '{livro.Titulo}' não está disponível para empréstimo.");
+
+        // Verifica o limite de empréstimos ativos por perfil (Aluno: 3, Professor: 5, Admin: sem limite)
+        var limiteEmprestimos = usuario.Role switch
+        {
+            Role.Aluno => 3,
+            Role.Professor => 5,
+            _ => int.MaxValue
+        };
+
+        var emprestimosAtivosDoUsuario = _emprestimoRepository.GetEmprestimosAtivosPorUsuario(request.UsuarioId).Count();
+        if (emprestimosAtivosDoUsuario >= limiteEmprestimos)
+            throw new RegraDeNegocioException(
+                $"Limite de {limiteEmprestimos} empréstimos ativos atingido para o perfil {usuario.Role}.");
 
         // Cria o empréstimo
         var emprestimo = new Emprestimo

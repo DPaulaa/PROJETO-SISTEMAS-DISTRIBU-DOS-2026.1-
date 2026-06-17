@@ -19,6 +19,8 @@ public class LivroRequest
 
     [MaxLength(20)]
     public string? Isbn { get; set; }
+     [Range(0, int.MaxValue, ErrorMessage = "A quantidade disponível não pode ser negativa.")]
+    public int QuantidadeDisponivel { get; set; } = 1;
 }
 
 /// <summary>Dados que a API retorna ao cliente — nunca a entidade diretamente.</summary>
@@ -28,5 +30,6 @@ public class LivroResponse
     public string Titulo { get; set; } = string.Empty;
     public string Autor { get; set; } = string.Empty;
     public string Isbn { get; set; } = string.Empty;
+    public int QuantidadeDisponivel { get; set; }
     public DateTime CreatedAt { get; set; }
 }

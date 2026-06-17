@@ -2,5 +2,5 @@ namespace BibliotecaRosa.Services.Interfaces;
 
 public interface IAuthService
 {
-    string GerarToken(string email, string role);
+     string GerarToken(int id, string email, string role);
 }

@@ -30,7 +30,7 @@ public class AuthController : ControllerBase
         if (usuario == null || !BCrypt.Net.BCrypt.Verify(dto.Senha, usuario.SenhaHash))
             return Unauthorized(new { mensagem = "E-mail ou senha inválidos." });
 
-        var token = _authService.GerarToken(usuario.Email, usuario.Role.ToString());
+       var token = _authService.GerarToken(usuario.Id, usuario.Email, usuario.Role.ToString());
 
         return Ok(new { token });
     }

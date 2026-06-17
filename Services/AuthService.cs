@@ -15,7 +15,7 @@ public class AuthService : IAuthService
         _configuration = configuration;
     }
 
-    public string GerarToken(string email, string role)
+    public string GerarToken(int id, string email, string role)
     {
         var jwtKey = _configuration["Jwt:Key"]
             ?? throw new InvalidOperationException("Jwt:Key não configurada.");
@@ -26,7 +26,7 @@ public class AuthService : IAuthService
 
         var claims = new[]
         {
-            new Claim(ClaimTypes.NameIdentifier, email),
+            new Claim(ClaimTypes.NameIdentifier, id.ToString()),
             new Claim(ClaimTypes.Email, email),
             new Claim(ClaimTypes.Role, role)
         };

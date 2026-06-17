@@ -35,7 +35,6 @@ public class LivroService : ILivroService
 
     public LivroResponse Create(LivroRequest request)
     {
-        // Regra de negócio: ISBN único
         if (!string.IsNullOrWhiteSpace(request.Isbn))
         {
             var existente = _repo.GetByIsbn(request.Isbn.Trim());
@@ -45,10 +44,11 @@ public class LivroService : ILivroService
 
         var livro = new Livro
         {
-            Titulo    = request.Titulo.Trim(),
-            Autor     = request.Autor.Trim(),
-            Isbn      = request.Isbn?.Trim() ?? "Sem ISBN",
-            CreatedAt = DateTime.UtcNow
+            Titulo               = request.Titulo.Trim(),
+            Autor                = request.Autor.Trim(),
+            Isbn                 = request.Isbn?.Trim() ?? "Sem ISBN",
+            QuantidadeDisponivel = request.QuantidadeDisponivel,
+            CreatedAt            = DateTime.UtcNow
         };
 
         _repo.Add(livro);
@@ -61,9 +61,10 @@ public class LivroService : ILivroService
         var livro = _repo.GetById(id)
             ?? throw new RecursoNaoEncontradoException($"Livro {id} não encontrado.");
 
-        livro.Titulo = request.Titulo.Trim();
-        livro.Autor  = request.Autor.Trim();
-        livro.Isbn   = request.Isbn?.Trim() ?? livro.Isbn;
+        livro.Titulo               = request.Titulo.Trim();
+        livro.Autor                = request.Autor.Trim();
+        livro.Isbn                 = request.Isbn?.Trim() ?? livro.Isbn;
+        livro.QuantidadeDisponivel = request.QuantidadeDisponivel;
 
         _repo.Update(livro);
         _logger.LogInformation("Livro atualizado: Id={Id}", id);
@@ -83,10 +84,11 @@ public class LivroService : ILivroService
     // Assim o cliente nunca vê campos internos que não são relevantes para ele.
     private static LivroResponse Mapear(Livro l) => new()
     {
-        Id        = l.Id,
-        Titulo    = l.Titulo,
-        Autor     = l.Autor,
-        Isbn      = l.Isbn,
-        CreatedAt = l.CreatedAt
+        Id                   = l.Id,
+        Titulo               = l.Titulo,
+        Autor                = l.Autor,
+        Isbn                 = l.Isbn,
+        QuantidadeDisponivel = l.QuantidadeDisponivel,
+        CreatedAt            = l.CreatedAt
     };
 }

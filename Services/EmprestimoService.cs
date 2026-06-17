@@ -56,11 +56,7 @@ public class EmprestimoService : IEmprestimoService
             ?? throw new RecursoNaoEncontradoException($"Usuário {request.UsuarioId} não encontrado.");
 
         // Verifica se o livro está disponível
-        var emprestimosAtivos = _emprestimoRepository.GetEmprestimosAtivosPorLivro(request.LivroId);
-        var quantidadeEmprestada = emprestimosAtivos.Count();
-        var quantidadeDisponivel = livro.QuantidadeDisponivel - quantidadeEmprestada;
-
-        if (quantidadeDisponivel <= 0)
+        if (livro.QuantidadeDisponivel <= 0)
             throw new RegraDeNegocioException($"Livro '{livro.Titulo}' não está disponível para empréstimo.");
 
         // Cria o empréstimo
@@ -72,22 +68,40 @@ public class EmprestimoService : IEmprestimoService
             DataDevolucaoPrevista = DateTime.UtcNow.AddDays(7) // 7 dias para devolução
         };
 
+        // Decrementa o estoque do livro
+        livro.QuantidadeDisponivel -= 1;
+        _livroRepository.Update(livro);
+
         _emprestimoRepository.Add(emprestimo);
         _logger.LogInformation("Novo empréstimo criado: Livro={LivroId}, Usuario={UsuarioId}", request.LivroId, request.UsuarioId);
 
         return MapearParaResponse(emprestimo);
     }
 
-    public EmprestimoResponse Devolver(int idEmprestimo)
+    public EmprestimoResponse Devolver(int idEmprestimo, int usuarioLogadoId)
     {
         var emprestimo = _emprestimoRepository.GetById(idEmprestimo)
             ?? throw new RecursoNaoEncontradoException($"Empréstimo {idEmprestimo} não encontrado.");
+
+        // Só o usuário que fez o empréstimo pode devolvê-lo por aqui.
+        // Para devolver em nome de outro usuário, o Admin deve usar forcar-devolucao.
+        if (emprestimo.UsuarioId != usuarioLogadoId)
+            throw new RegraDeNegocioException("Você só pode devolver empréstimos feitos por você mesmo.");
 
         if (emprestimo.DataDevolucao.HasValue)
             throw new RegraDeNegocioException($"Empréstimo {idEmprestimo} já foi devolvido.");
 
         emprestimo.DataDevolucao = DateTime.UtcNow;
         _emprestimoRepository.Update(emprestimo);
+
+        // Devolve o exemplar ao estoque
+        var livro = _livroRepository.GetById(emprestimo.LivroId);
+        if (livro is not null)
+        {
+            livro.QuantidadeDisponivel += 1;
+            _livroRepository.Update(livro);
+        }
+
         _logger.LogInformation("Devolução registrada: Empréstimo={Id}", idEmprestimo);
 
         return MapearParaResponse(emprestimo);
@@ -117,6 +131,15 @@ public class EmprestimoService : IEmprestimoService
 
         emprestimo.DataDevolucao = DateTime.UtcNow;
         _emprestimoRepository.Update(emprestimo);
+
+        // Devolve o exemplar ao estoque também na devolução forçada pelo Admin
+        var livro = _livroRepository.GetById(emprestimo.LivroId);
+        if (livro is not null)
+        {
+            livro.QuantidadeDisponivel += 1;
+            _livroRepository.Update(livro);
+        }
+
         _logger.LogWarning("Devolução FORÇADA pelo Admin: Empréstimo={Id}", idEmprestimo);
 
         return MapearParaResponse(emprestimo);

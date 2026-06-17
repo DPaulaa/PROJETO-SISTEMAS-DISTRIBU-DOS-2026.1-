@@ -9,7 +9,7 @@ public interface IEmprestimoService
     EmprestimoResponse GetById(int id);
     void Delete(int id);
     EmprestimoResponse Emprestar(EmprestimoRequest request);
-    EmprestimoResponse Devolver(int idEmprestimo);
+    EmprestimoResponse Devolver(int idEmprestimo, int usuarioLogadoId);
 
     // Admin
     IEnumerable<EmprestimoResponse> GetAllAdmin();

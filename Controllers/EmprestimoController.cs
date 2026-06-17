@@ -40,9 +40,6 @@ public class EmprestimoController : ControllerBase
     [ProducesResponseType(typeof(IEnumerable<EmprestimoResponse>), 200)]
     public IActionResult Historico()
     {
-        if (User.IsInRole("Admin"))
-            return Ok(_emprestimoService.GetAllAdmin());
-
         var usuarioId = ObterUsuarioLogadoId();
         return Ok(_emprestimoService.GetHistoricoDoUsuario(usuarioId));
     }
@@ -74,7 +71,8 @@ public class EmprestimoController : ControllerBase
     [ProducesResponseType(404)]
     public IActionResult Devolver(int id)
     {
-        return Ok(_emprestimoService.Devolver(id));
+        var usuarioId = ObterUsuarioLogadoId();
+        return Ok(_emprestimoService.Devolver(id, usuarioId));
     }
 
     [HttpGet("admin/todos")]

@@ -27,32 +27,35 @@ public class UsuariosController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(UsuarioRespostaDto), 201)]
     [ProducesResponseType(400)]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(403)]
     [ProducesResponseType(409)]
     public async Task<IActionResult> Cadastrar([FromBody] UsuarioCadastroDto dto)
     {
         var novoUsuario = await _usuarioService.CadastrarAsync(dto);
-        return CreatedAtAction(nameof(ObterTodos), new { id = novoUsuario.Id }, novoUsuario);
+        return StatusCode(201, novoUsuario);
     }
 
     [HttpPut("{id:int}")]
-[Authorize(Roles = "Admin")]
-[ProducesResponseType(typeof(UsuarioRespostaDto), 200)]
-[ProducesResponseType(404)]
-public async Task<IActionResult> Atualizar(int id, [FromBody] UsuarioAtualizacaoDto dto)
-{
-    var usuario = await _usuarioService.AtualizarAsync(id, dto);
-    return Ok(usuario);
-}
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(typeof(UsuarioRespostaDto), 200)]
+    [ProducesResponseType(404)]
+    public async Task<IActionResult> Atualizar(int id, [FromBody] UsuarioAtualizacaoDto dto)
+    {
+        var usuario = await _usuarioService.AtualizarAsync(id, dto);
+        return Ok(usuario);
+    }
 
-[HttpDelete("{id:int}")]
-[Authorize(Roles = "Admin")]
-[ProducesResponseType(204)]
-[ProducesResponseType(404)]
-public async Task<IActionResult> Remover(int id)
-{
-    await _usuarioService.RemoverAsync(id);
-    return NoContent();
-}
+    [HttpDelete("{id:int}")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(204)]
+    [ProducesResponseType(404)]
+    public async Task<IActionResult> Remover(int id)
+    {
+        await _usuarioService.RemoverAsync(id);
+        return NoContent();
+    }
 }

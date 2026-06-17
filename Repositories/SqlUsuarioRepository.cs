@@ -35,5 +35,17 @@ namespace BibliotecaRosa.Repositories
             await _context.Usuarios.AddAsync(usuario);
             await _context.SaveChangesAsync();
         }
+
+        public async Task AtualizarAsync(Usuario usuario)
+{
+    _context.Usuarios.Update(usuario);
+    await _context.SaveChangesAsync();
+}
+
+public async Task RemoverAsync(Usuario usuario)
+{
+    _context.Usuarios.Remove(usuario);
+    await _context.SaveChangesAsync();
+}
     }
 }

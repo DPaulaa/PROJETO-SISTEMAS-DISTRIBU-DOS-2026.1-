@@ -8,5 +8,7 @@ namespace BibliotecaRosa.Repositories.Interfaces
         Task<Usuario?> BuscarPorIdAsync(int id);
         Task<Usuario?> BuscarPorEmailAsync(string email);
         Task AdicionarAsync(Usuario usuario);
+        Task AtualizarAsync(Usuario usuario);
+        Task RemoverAsync(Usuario usuario);
     }
 }

@@ -35,4 +35,24 @@ public class UsuariosController : ControllerBase
         var novoUsuario = await _usuarioService.CadastrarAsync(dto);
         return CreatedAtAction(nameof(ObterTodos), new { id = novoUsuario.Id }, novoUsuario);
     }
+
+    [HttpPut("{id:int}")]
+[Authorize(Roles = "Admin")]
+[ProducesResponseType(typeof(UsuarioRespostaDto), 200)]
+[ProducesResponseType(404)]
+public async Task<IActionResult> Atualizar(int id, [FromBody] UsuarioAtualizacaoDto dto)
+{
+    var usuario = await _usuarioService.AtualizarAsync(id, dto);
+    return Ok(usuario);
+}
+
+[HttpDelete("{id:int}")]
+[Authorize(Roles = "Admin")]
+[ProducesResponseType(204)]
+[ProducesResponseType(404)]
+public async Task<IActionResult> Remover(int id)
+{
+    await _usuarioService.RemoverAsync(id);
+    return NoContent();
+}
 }

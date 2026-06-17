@@ -15,11 +15,35 @@ namespace BibliotecaRosa.Services
             _repository = repository;
         }
 
+public async Task<UsuarioRespostaDto> AtualizarAsync(int id, UsuarioAtualizacaoDto dto)
+{
+    var usuario = await _repository.BuscarPorIdAsync(id)
+        ?? throw new KeyNotFoundException("Usuário não encontrado.");
+
+    usuario.Nome = dto.Nome;
+    usuario.Email = dto.Email;
+    usuario.Role = dto.Perfil;
+
+    if (!string.IsNullOrEmpty(dto.Senha))
+        usuario.SenhaHash = BCrypt.Net.BCrypt.HashPassword(dto.Senha);
+
+    await _repository.AtualizarAsync(usuario);
+    return new UsuarioRespostaDto(usuario.Id, usuario.Nome, usuario.Email, usuario.Role, usuario.SenhaHash);
+}
+
+public async Task RemoverAsync(int id)
+{
+    var usuario = await _repository.BuscarPorIdAsync(id)
+        ?? throw new KeyNotFoundException("Usuário não encontrado.");
+
+    await _repository.RemoverAsync(usuario);
+}
+
         public async Task<IEnumerable<UsuarioRespostaDto>> ObterTodosAsync()
         {
             var usuarios = await _repository.BuscarTodosAsync();
             // Mapeia a entidade do banco para o DTO de saída
-            return usuarios.Select(u => new UsuarioRespostaDto(u.Id, u.Nome, u.Email, u.Role));
+            return usuarios.Select(u => new UsuarioRespostaDto(u.Id, u.Nome, u.Email, u.Role, u.SenhaHash));
         }
 
         public async Task<UsuarioRespostaDto> CadastrarAsync(UsuarioCadastroDto dto)
@@ -44,7 +68,7 @@ namespace BibliotecaRosa.Services
 
             await _repository.AdicionarAsync(novoUsuario);
 
-            return new UsuarioRespostaDto(novoUsuario.Id, novoUsuario.Nome, novoUsuario.Email, novoUsuario.Role);
+            return new UsuarioRespostaDto(novoUsuario.Id, novoUsuario.Nome, novoUsuario.Email, novoUsuario.Role, novoUsuario.SenhaHash);
         }
     }
 }

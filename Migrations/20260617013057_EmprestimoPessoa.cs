@@ -21,22 +21,6 @@ namespace BibliotecaRosa.Migrations
                 defaultValue: 0);
 
             migrationBuilder.CreateTable(
-                name: "Usuarios",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Nome = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Email = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
-                    SenhaHash = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Role = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Usuarios", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Emprestimos",
                 columns: table => new
                 {
@@ -93,16 +77,6 @@ namespace BibliotecaRosa.Migrations
                 columns: new[] { "Isbn", "QuantidadeDisponivel" },
                 values: new object[] { "9788595081512", 1 });
 
-            migrationBuilder.InsertData(
-                table: "Usuarios",
-                columns: new[] { "Id", "Email", "Nome", "Role", "SenhaHash" },
-                values: new object[,]
-                {
-                    { 1, "admin@rosa.com", "Admin Rosa", 1, "$2a$11$K8X9Y7Z6W5V4U3T2S1R0Q9P8O7N6M5L4K3J2I1H0G9F8E7D6C5B4A3Z2X1C0V" },
-                    { 2, "professor@rosa.com", "Professor Girafales", 2, "$2a$11$L4M3N2O1P0Q9R8S7T6U5V4W3X2Y1Z0A9B8C7D6E5F4G3H2I1J0K9L8M7N6O5P" },
-                    { 3, "aluno@rosa.com", "Aluno Chaves", 3, "$2a$11$N6O5P4Q3R2S1T0U9V8W7X6Y5Z4A3B2C1D0E9F8G7H6I5J4K3L2M1N0O9P8Q7R" }
-                });
-
             migrationBuilder.CreateIndex(
                 name: "IX_Emprestimos_LivroId",
                 table: "Emprestimos",
@@ -112,12 +86,6 @@ namespace BibliotecaRosa.Migrations
                 name: "IX_Emprestimos_UsuarioId",
                 table: "Emprestimos",
                 column: "UsuarioId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Usuarios_Email",
-                table: "Usuarios",
-                column: "Email",
-                unique: true);
         }
 
         /// <inheritdoc />

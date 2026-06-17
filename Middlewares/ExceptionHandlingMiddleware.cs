@@ -1,10 +1,7 @@
-// Middlewares/ExceptionHandlingMiddleware.cs
-//
-// Intercepta qualquer erro que aconteça durante uma requisição e devolve uma resposta organizada ao cliente (com status HTTP e mensagem legível).
-// Assim os controllers ficam limpos — sem blocos try/catch espalhados.
-namespace BibliotecaRosa.Middlewares;
-
+using System.Text.Json;
 using BibliotecaRosa.Exceptions;
+
+namespace BibliotecaRosa.Middlewares;
 
 public class ExceptionHandlingMiddleware
 {
@@ -13,7 +10,7 @@ public class ExceptionHandlingMiddleware
 
     public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
     {
-        _next   = next;
+        _next = next;
         _logger = logger;
     }
 
@@ -31,29 +28,21 @@ public class ExceptionHandlingMiddleware
         {
             await Responder(context, 400, ex.Message);
         }
+        catch (ConflitoException ex)
+        {
+            await Responder(context, 409, ex.Message);
+        }
         catch (Exception ex)
         {
-            // O detalhe do erro vai para o log interno — o cliente recebe só uma mensagem genérica
             _logger.LogError(ex, "Erro interno em {Path}", context.Request.Path);
             await Responder(context, 500, "Ocorreu um erro interno. Tente novamente.");
         }
-
-        try
-        {
-            await _next(context);
-        }
-        catch (ConflitoException ex)
-        {
-            context.Response.StatusCode = StatusCodes.Status409Conflict;
-            context.Response.ContentType = "application/json";
-            await context.Response.WriteAsJsonAsync(new { mensagem = ex.Message });
-        }
     }
 
-    private static Task Responder(HttpContext ctx, int status, string mensagem)
+    private static async Task Responder(HttpContext ctx, int status, string mensagem)
     {
-        ctx.Response.StatusCode  = status;
+        ctx.Response.StatusCode = status;
         ctx.Response.ContentType = "application/json";
-        return ctx.Response.WriteAsJsonAsync(new { status, message = mensagem });
+        await ctx.Response.WriteAsJsonAsync(new { status, message = mensagem });
     }
 }
